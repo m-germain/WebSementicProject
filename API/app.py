@@ -33,9 +33,9 @@ def getRecetteList():
     ingredients = parameters.get('ingredients')
     if ingredients is not None:
         if filter_clause == "":
-            filter_clause = "FILTER( CONTAINS(str(?ingredients)," + ingredients + ") "
+            filter_clause = "FILTER( CONTAINS(str(?ingredients), '" + ingredients + "' ) "
         else:
-            filter_clause += "&& CONTAINS(str(?ingredients)," + ingredients + ") "
+            filter_clause += "&& CONTAINS(str(?ingredients), '" + ingredients + "' ) "
 
     # filter on tempDePrep
     # Add the filter only if the tempDePrep is provided
@@ -51,18 +51,19 @@ def getRecetteList():
     typeCuisine = parameters.get('typeCuisine')
     if typeCuisine is not None:
         if filter_clause == "":
-            filter_clause = "FILTER( CONTAINS(str(?cuisine)," + typeCuisine + ") "
+            filter_clause = "FILTER( CONTAINS(str(?cuisine),'" + typeCuisine + "' ) "
         else:
-            filter_clause += "&& CONTAINS(str(?cuisine)," + typeCuisine + ") "
+            filter_clause += "&& CONTAINS(str(?cuisine), '" + typeCuisine + "' ) "
 
+    # NO SPARQL QUERY FOR NOW !!!!
     # filter on difficulty
     # Add the filter only if the difficulty is provided
     difficulty = parameters.get('difficulty')
     if difficulty is not None:
         if filter_clause == "":
-            filter_clause = "FILTER( CONTAINS(str(?difficulty)," + difficulty + ") "
+            filter_clause = "FILTER( CONTAINS(str(?difficulty),'" + difficulty + "' ) "
         else:
-            filter_clause += "&& CONTAINS(str(?difficulty)," + difficulty + ") "
+            filter_clause += "&& CONTAINS(str(?difficulty), '" + difficulty + "' ) "
 
     # Close the parenthesis at the end of the clause
     if filter_clause != "":
