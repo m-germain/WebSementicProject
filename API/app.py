@@ -13,7 +13,7 @@ def hello_world():
 # get the all the recipes if no filters are given
 # else select the recipes that corresponds to the provided filter(s)
 @app.route('/recette')
-def getRecette():
+def getRecetteList():
     parameters = request.args
 
     # filter of the SPARQL query
