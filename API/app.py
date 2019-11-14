@@ -193,6 +193,8 @@ def getSummary(raw_data):
         new_recette["img"] = recette["img"]["value"]
         # total time
         new_recette["totalTime"] = recette["totalTime"]["value"]
+        # ratingValue
+        new_recette["ratingValue"] = recette["ratingValue"]["value"]
         new_list.append(new_recette)
     result["list_recette"] = new_list
     return result
