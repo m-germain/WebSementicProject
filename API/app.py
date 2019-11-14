@@ -119,7 +119,7 @@ def getRecetteList():
     results = sparql.query().convert()
 
     # get summary for each recette
-    results = getSummary(results)
+    results = mappingSmallSummary(results)
 
     return results
 
@@ -130,9 +130,8 @@ def getRecetteList():
 @app.route('/recette')
 def getRecette():
     parameters = request.args
-    name = "Indian mince with" #parameters.get('name')
-    query = """
-            SELECT 
+    name = parameters.get('name') #Ex : spanish-sardines-on-toast
+    query =""" SELECT 
                 ?desc 
                 ?name 
                 ?img
@@ -160,23 +159,25 @@ def getRecette():
                     schema:ratingValue ?ratingValue;
                     schema:totalTime ?totalTime;
                     wdrs:describedby ?source.
-                    FILTER(CONTAINS(str(?name),'""" + name + """' )).
+                    FILTER(CONTAINS(str(?source), "%s" )).
                 }
             }
-            GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue """
+            GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue """ % (name)
     # get the result of the query in json
+    print(query)
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
 
     # get infos recette
-    results = getSummaryRecette(results)
+    results = mappingSummaryRecette(results)
+    print(results)
 
     return results
 
 
-def getSummary(raw_data):
+def mappingSmallSummary(raw_data):
     list_recette = raw_data["results"]["bindings"]
     result = {}
     new_list = []
@@ -206,7 +207,7 @@ def getSummary(raw_data):
     return result
 
 
-def getSummaryRecette(raw_data):
+def mappingSummaryRecette(raw_data):
     recette = raw_data["results"]["bindings"][0]
     new_recette = {}
     # name
