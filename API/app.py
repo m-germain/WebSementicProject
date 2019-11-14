@@ -5,6 +5,7 @@ import json
 
 app = Flask(__name__)
 
+known_ingredients = ['tomato', 'onion', 'carot']
 
 @app.route('/')
 def hello_world():
@@ -111,7 +112,7 @@ def getRecetteList():
             }
         """ + filter_ingredients + """ 
         } """
-
+    # get the result of the query in json
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
@@ -124,11 +125,12 @@ def getRecetteList():
 
 
 # get the recipe's informations
+# MUST HAVE ONLY ONE RESULT !!!!!
+# use the recipe's name to get the provided informations
 @app.route('/recette')
 def getRecette():
     parameters = request.args
-
-    name = parameters.get('name')
+    name = "Indian mince with" #parameters.get('name')
     query = """
             SELECT 
                 ?desc 
@@ -158,14 +160,18 @@ def getRecette():
                     schema:ratingValue ?ratingValue;
                     schema:totalTime ?totalTime;
                     wdrs:describedby ?source.
+                    FILTER(CONTAINS(str(?name),'""" + name + """' )).
                 }
             }
             GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue """
-
+    # get the result of the query in json
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
+
+    # get infos recette
+    results = getSummaryRecette(results)
 
     return results
 
@@ -196,8 +202,63 @@ def getSummary(raw_data):
         # ratingValue
         new_recette["ratingValue"] = recette["ratingValue"]["value"]
         new_list.append(new_recette)
-    result["list_recette"] = new_list
+    result["recette"] = new_list
     return result
+
+
+def getSummaryRecette(raw_data):
+    recette = raw_data["results"]["bindings"][0]
+    new_recette = {}
+    # name
+    name = recette["name"]["value"]
+    name = name.replace('\n', ' ')
+    new_recette["name"] = name
+    # description
+    desc = recette["desc"]["value"]
+    desc = desc.replace("\n\n\n\n", "")
+    desc = desc.replace("\n\n\n", "")
+    desc = desc.replace("\n\n", "")
+    desc = desc.replace("\n", " ")
+    new_recette["description"] = desc
+    # image
+    new_recette["img"] = recette["img"]["value"]
+    # total time
+    new_recette["totalTime"] = recette["totalTime"]["value"]
+    # ratingValue
+    new_recette["ratingValue"] = recette["ratingValue"]["value"]
+    # cuisine
+    new_recette["cuisine"] = recette["cuisine"]["value"]
+    # ingredients
+    ingredientsList = recette["ingredients"]["value"]
+    new_recette["ingredients"] = getListInfosIngredients(ingredientsList)
+    return new_recette
+
+# create a Json List with the ingredients ( and the url if the ingredient is in our glossaire)
+# result : [ { "ingredient": ..., "url": ...},{...}, ... ]
+def getListInfosIngredients(ingredientsList):
+    list_ingredients = []
+    ingredients = ingredientsList.split(',')
+    for ingredient in ingredients:
+        infosIngredientsJson = {}
+        # if it is the hyperlink we take just what is just before ".jpg"
+        if "http" in ingredient:
+            new_ingredient = ingredient.rsplit('/', 1)[1]
+            new_ingredient = new_ingredient.split('.jpg')[0]
+            infosIngredientsJson["ingredient"] = new_ingredient
+            # add the ingredient's url only if the ingredient is in the known ingredients'list
+            for ing in known_ingredients:
+                if ing in new_ingredient:
+                    infosIngredientsJson["url"] = "/glossaire/" + ing
+                    break
+        else:
+            infosIngredientsJson["ingredient"] = ingredient
+            # add the ingredient's url only if the ingredient is in the known ingredients'list
+            for ing in known_ingredients:
+                if ing in ingredient:
+                    infosIngredientsJson["url"] = "/glossaire/" + ing
+                    break
+        list_ingredients.append(infosIngredientsJson)
+    return list_ingredients
 
 
 if __name__ == '__main__':
