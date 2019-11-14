@@ -13,12 +13,15 @@ def hello_world():
 
 # get the all the recipes if no filters are given
 # else select the recipes that corresponds to the provided filter(s)
-@app.route('/recette')
+@app.route('/listRecette')
 def getRecetteList():
     parameters = request.args
 
     # filter of the SPARQL query
     filter_clause = ""
+
+    # filter on multiple ingredients
+    filter_ingredients = ""
 
     # filter on note
     # Add the filter only if the note is provided
@@ -29,23 +32,14 @@ def getRecetteList():
         else:
             filter_clause += "&& xsd:float(?ratingValue)>" + note + " "
 
-    # filter on ingredient
-    # Add the filter only if the ingredient is provided
-    ingredients = parameters.get('ingredients')
-    if ingredients is not None:
-        if filter_clause == "":
-            filter_clause = "FILTER( CONTAINS(str(?ingredients), '" + ingredients + "' ) "
-        else:
-            filter_clause += "&& CONTAINS(str(?ingredients), '" + ingredients + "' ) "
-
     # filter on tempDePrep
     # Add the filter only if the tempDePrep is provided
     tempDePrep = parameters.get('tempDePrep')
     if tempDePrep is not None:
         if filter_clause == "":
-            filter_clause = 'FILTER( "'+tempDePrep+'"^^xsd:duration > xsd:duration(?totalTime) '
+            filter_clause = 'FILTER( "' + tempDePrep + '"^^xsd:duration > xsd:duration(?totalTime) '
         else:
-            filter_clause += '&& "'+tempDePrep+'"^^xsd:duration > xsd:duration(?totalTime) '
+            filter_clause += '&& "' + tempDePrep + '"^^xsd:duration > xsd:duration(?totalTime) '
 
     # filter on typeCuisine
     # Add the filter only if the typeCuisine is provided
@@ -56,45 +50,67 @@ def getRecetteList():
         else:
             filter_clause += "&& CONTAINS(str(?cuisine), '" + typeCuisine + "' ) "
 
-    # NO SPARQL QUERY FOR NOW !!!!
-    # filter on difficulty
-    # Add the filter only if the difficulty is provided
-    difficulty = parameters.get('difficulty')
-    if difficulty is not None:
-        if filter_clause == "":
-            filter_clause = "FILTER( CONTAINS(str(?difficulty),'" + difficulty + "' ) "
-        else:
-            filter_clause += "&& CONTAINS(str(?difficulty), '" + difficulty + "' ) "
-
     # Close the parenthesis at the end of the clause
     if filter_clause != "":
         filter_clause += ")."
 
+    # filter on ingredient
+    # Add the filter only if the ingredient is provided
+    ingredientsList = parameters.get('ingredients')
+    if ingredientsList is not None:
+        ingredients = ingredientsList.split(',')
+        for ingredient in ingredients:
+            if filter_ingredients == "":
+                filter_ingredients = "FILTER( CONTAINS(str(?ingredients), '" + ingredient + "' ) "
+            else:
+                filter_ingredients += "&& CONTAINS(str(?ingredients), '" + ingredient + "' ) "
+
+    # Close the parenthesis at the end of the clause
+    if filter_ingredients != "":
+        filter_ingredients += ")."
+
     query = """
         SELECT 
-            ?recipe 
-            ?desc 
             ?name 
+            ?desc 
             ?img
-            ?cuisine
-            (group_concat(?ingredients;separator = ',') as ?ingredients)
             ?totalTime
             ?ratingValue
-            ?source
-        WHERE
-        {
-            ?recipe a schema:Recipe;
-            schema:description ?desc;
-            schema:name ?name;
-            schema:image ?img;
-            schema:recipeCuisine ?cuisine;
-            schema:ingredients ?ingredients;
-            schema:ratingValue ?ratingValue;
-            schema:totalTime ?totalTime;
-            wdrs:describedby ?source.
-            """ + filter_clause + """
-        }
-        GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue ?source"""
+        WHERE {
+            {
+            SELECT 
+                ?desc 
+                ?name 
+                ?img
+                ?totalTime
+                ?ratingValue
+                (group_concat(?ingredients;separator = ",") as ?ingredients)
+            WHERE {
+                SELECT DISTINCT
+                    ?desc 
+                    ?name 
+                    ?img
+                    ?ingredients
+                    ?totalTime
+                    ?ratingValue
+                WHERE
+                {
+                    ?recipe a schema:Recipe;
+                    schema:description ?desc;
+                    schema:name ?name;
+                    schema:image ?img;
+                    schema:recipeCuisine ?cuisine;
+                    schema:ingredients ?ingredients;
+                    schema:ratingValue ?ratingValue;
+                    schema:totalTime ?totalTime;
+                    wdrs:describedby ?source.
+                    """ + filter_clause + """
+                }
+            }
+            GROUP BY ?desc ?name ?img ?totalTime ?ratingValue
+            }
+        """ + filter_ingredients + """ 
+        } """
 
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
     sparql.setQuery(query)
@@ -103,6 +119,53 @@ def getRecetteList():
 
     # get summary for each recette
     results = getSummary(results)
+
+    return results
+
+
+# get the recipe's informations
+@app.route('/recette')
+def getRecette():
+    parameters = request.args
+
+    name = parameters.get('name')
+    query = """
+            SELECT 
+                ?desc 
+                ?name 
+                ?img
+                ?cuisine
+                ?totalTime
+                ?ratingValue
+                (group_concat(?ingredients;separator = ",") as ?ingredients)
+            WHERE {
+                SELECT DISTINCT
+                    ?desc 
+                    ?name 
+                    ?img
+                    ?cuisine
+                    ?ingredients
+                    ?totalTime
+                    ?ratingValue
+                WHERE
+                {
+                    ?recipe a schema:Recipe;
+                    schema:description ?desc;
+                    schema:name ?name;
+                    schema:image ?img;
+                    schema:recipeCuisine ?cuisine;
+                    schema:ingredients ?ingredients;
+                    schema:ratingValue ?ratingValue;
+                    schema:totalTime ?totalTime;
+                    wdrs:describedby ?source.
+                }
+            }
+            GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue """
+
+    sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
+    sparql.setQuery(query)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
 
     return results
 
@@ -124,6 +187,7 @@ def getSummary(raw_data):
         desc = desc.replace("\n\n\n\n", "")
         desc = desc.replace("\n\n\n", "")
         desc = desc.replace("\n\n", "")
+        desc = desc.replace("\n", " ")
         new_recette["description"] = desc
         # image
         new_recette["img"] = recette["img"]["value"]
