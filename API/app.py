@@ -119,8 +119,9 @@ def getRecetteList():
 
     # get summary for each recette
     results = mappingSmallSummary(results)
-
-    return results
+    resp = make_response(results)
+    resp.headers.set('Access-Control-Allow-Origin', '*')
+    return resp
 
 
 # get the recipe's informations
