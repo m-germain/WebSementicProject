@@ -202,7 +202,7 @@ def getSummary(raw_data):
         # ratingValue
         new_recette["ratingValue"] = recette["ratingValue"]["value"]
         new_list.append(new_recette)
-    result["recette"] = new_list
+    result["list_recette"] = new_list
     return result
 
 
