@@ -1,5 +1,4 @@
-from flask import Flask
-from flask import request
+from flask import Flask, request, make_response
 from SPARQLWrapper import SPARQLWrapper, JSON
 import json
 
@@ -174,7 +173,11 @@ def getRecette():
     results = mappingSummaryRecette(results)
     print(results)
 
-    return results
+    resp = make_response(results)
+    # Permet de comuniquer sur des ports différents sur le navigateur
+    # regle les problemes de CORS policy
+    resp.headers.set('Access-Control-Allow-Origin', '*')
+    return resp
 
 
 def mappingSmallSummary(raw_data):
