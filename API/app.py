@@ -175,7 +175,6 @@ def getRecette():
 
     # get infos recette
     results = mappingSummaryRecette(results)
-    print(results)
 
     resp = make_response(results)
     # Permet de comuniquer sur des ports différents sur le navigateur
@@ -231,7 +230,7 @@ def mappingSummaryRecette(raw_data):
     # image
     new_recette["imgUrl"] = recette["img"]["value"]
     # total time
-    new_recette["cookTime"] = recette["totalTime"]["value"]
+    new_recette["totaleTime"] = recette["totalTime"]["value"]
     # ratingValue
     new_recette["note"] = recette["ratingValue"]["value"]
     # cuisine
