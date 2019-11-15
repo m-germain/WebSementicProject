@@ -86,7 +86,7 @@ def getRecetteList():
                 ?totalTime
                 ?ratingValue
                 ?source
-                (group_concat(?ingredients;separator = ",") as ?ingredients)
+                (group_concat(?ingredients;separator = ";") as ?ingredients)
             WHERE {
                 SELECT DISTINCT
                     ?desc 
@@ -119,7 +119,7 @@ def getRecetteList():
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
-    print(results)
+
     # get summary for each recette
     results = mappingSmallSummary(results)
     resp = make_response(results)
@@ -141,7 +141,7 @@ def getRecette():
                 ?cuisine
                 ?totalTime
                 ?ratingValue
-                (group_concat(?ingredients;separator = ",") as ?ingredients)
+                (group_concat(?ingredients;separator = ";") as ?ingredients)
             WHERE {
                 SELECT DISTINCT
                     ?desc 
@@ -167,7 +167,6 @@ def getRecette():
             }
             GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue """ % (name)
     # get the result of the query in json
-    print(query)
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
@@ -205,7 +204,8 @@ def mappingSmallSummary(raw_data):
         # image
         new_recette["imgUrl"] = recette["img"]["value"]
         # total time
-        new_recette["cookTime"] = recette["totalTime"]["value"]
+        time = changeTimeFormat(recette["totalTime"]["value"])
+        new_recette["totaleTime"] = time
         # ratingValue
         new_recette["note"] = recette["ratingValue"]["value"]
         new_list.append(new_recette)
@@ -230,7 +230,8 @@ def mappingSummaryRecette(raw_data):
     # image
     new_recette["imgUrl"] = recette["img"]["value"]
     # total time
-    new_recette["totaleTime"] = recette["totalTime"]["value"]
+    time = changeTimeFormat(recette["totalTime"]["value"])
+    new_recette["totaleTime"] = time
     # ratingValue
     new_recette["note"] = recette["ratingValue"]["value"]
     # cuisine
@@ -244,7 +245,7 @@ def mappingSummaryRecette(raw_data):
 # result : [ { "ingredient": ..., "url": ...},{...}, ... ]
 def getListInfosIngredients(ingredientsList):
     list_ingredients = []
-    ingredients = ingredientsList.split(',')
+    ingredients = ingredientsList.split(';')
     for ingredient in ingredients:
         infosIngredientsJson = {}
         # if it is the hyperlink we take just what is just before ".jpg"
@@ -266,6 +267,14 @@ def getListInfosIngredients(ingredientsList):
                     break
         list_ingredients.append(infosIngredientsJson)
     return list_ingredients
+
+
+def changeTimeFormat(time):
+    time = time.split('T')[1]
+    if "M" in time:
+        time += "in"
+    time = time.lower()
+    return time
 
 
 if __name__ == '__main__':
