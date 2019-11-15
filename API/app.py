@@ -76,6 +76,7 @@ def getRecetteList():
             ?img
             ?totalTime
             ?ratingValue
+            ?source
         WHERE {
             {
             SELECT 
@@ -84,6 +85,7 @@ def getRecetteList():
                 ?img
                 ?totalTime
                 ?ratingValue
+                ?source
                 (group_concat(?ingredients;separator = ",") as ?ingredients)
             WHERE {
                 SELECT DISTINCT
@@ -93,6 +95,7 @@ def getRecetteList():
                     ?ingredients
                     ?totalTime
                     ?ratingValue
+                    ?source
                 WHERE
                 {
                     ?recipe a schema:Recipe;
@@ -107,7 +110,7 @@ def getRecetteList():
                     """ + filter_clause + """
                 }
             }
-            GROUP BY ?desc ?name ?img ?totalTime ?ratingValue
+            GROUP BY ?desc ?name ?img ?totalTime ?ratingValue ?source
             }
         """ + filter_ingredients + """ 
         } """
@@ -116,7 +119,7 @@ def getRecetteList():
     sparql.setQuery(query)
     sparql.setReturnFormat(JSON)
     results = sparql.query().convert()
-
+    print(results)
     # get summary for each recette
     results = mappingSmallSummary(results)
     resp = make_response(results)
@@ -191,8 +194,8 @@ def mappingSmallSummary(raw_data):
         name = recette["name"]["value"]
         name = name.replace('\n', ' ')
         new_recette["name"] = name
-        linkName = name.replace(' ', '-')
-        new_recette["linkName"] = linkName
+        linkName = recette["source"]["value"].split("/")
+        new_recette["linkName"] = linkName[-1]
         # description
         desc = recette["desc"]["value"]
         desc = desc.replace("\n\n\n\n", "")
@@ -201,11 +204,11 @@ def mappingSmallSummary(raw_data):
         desc = desc.replace("\n", " ")
         new_recette["description"] = desc
         # image
-        new_recette["img"] = recette["img"]["value"]
+        new_recette["imgUrl"] = recette["img"]["value"]
         # total time
-        new_recette["totalTime"] = recette["totalTime"]["value"]
+        new_recette["cookTime"] = recette["totalTime"]["value"]
         # ratingValue
-        new_recette["ratingValue"] = recette["ratingValue"]["value"]
+        new_recette["note"] = recette["ratingValue"]["value"]
         new_list.append(new_recette)
     result["list_recette"] = new_list
     return result
@@ -226,11 +229,11 @@ def mappingSummaryRecette(raw_data):
     desc = desc.replace("\n", " ")
     new_recette["description"] = desc
     # image
-    new_recette["img"] = recette["img"]["value"]
+    new_recette["imgUrl"] = recette["img"]["value"]
     # total time
-    new_recette["totalTime"] = recette["totalTime"]["value"]
+    new_recette["cookTime"] = recette["totalTime"]["value"]
     # ratingValue
-    new_recette["ratingValue"] = recette["ratingValue"]["value"]
+    new_recette["note"] = recette["ratingValue"]["value"]
     # cuisine
     new_recette["cuisine"] = recette["cuisine"]["value"]
     # ingredients
