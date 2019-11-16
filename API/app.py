@@ -80,9 +80,9 @@ def getRecetteList():
         keywords = keywordsList.split(' ')
         for keyword in keywords:
             if filter_keywords == "":
-                filter_keywords = "FILTER( CONTAINS(str(?keywords), '" + keyword + "' ) "
+                filter_keywords = "FILTER( CONTAINS(LCASE(str(?keywords)), '" + keyword + "' ) "
             else:
-                filter_keywords += "|| CONTAINS(str(?keywords), '" + keyword + "' ) "
+                filter_keywords += "|| CONTAINS(LCASE(str(?keywords)), '" + keyword + "' ) "
 
     # Close the parenthesis at the end of the clause
     if filter_keywords != "":
@@ -103,7 +103,7 @@ def getRecetteList():
                 ?img
                 ?totalTime
                 ?ratingValue
-                ?source
+                Min(?source) AS  ?source
                 (group_concat(DISTINCT ?ingredients;separator = ";") as ?ingredients)
                 (group_concat(DISTINCT ?keywords;separator = ";") as ?keywords)
             WHERE {
@@ -131,7 +131,7 @@ def getRecetteList():
                     """ + filter_clause + """
                 }
             }
-            GROUP BY ?desc ?name ?img ?totalTime ?ratingValue ?source
+            GROUP BY ?desc ?name ?img ?totalTime ?ratingValue
             }
         """ + filter_ingredients + """  """ + filter_keywords + """
         } """
