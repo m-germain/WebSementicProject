@@ -1,6 +1,7 @@
 from flask import Flask, request, make_response
 from SPARQLWrapper import SPARQLWrapper, JSON
 import json
+from string import digits
 
 app = Flask(__name__)
 
@@ -207,7 +208,9 @@ def mappingSmallSummary(raw_data):
         time = changeTimeFormat(recette["totalTime"]["value"])
         new_recette["totaleTime"] = time
         # ratingValue
-        new_recette["note"] = recette["ratingValue"]["value"]
+        note = recette["ratingValue"]["value"]
+        note = roundNote(note)
+        new_recette["note"] = note
         new_list.append(new_recette)
     result["list_recette"] = new_list
     return result
@@ -233,7 +236,9 @@ def mappingSummaryRecette(raw_data):
     time = changeTimeFormat(recette["totalTime"]["value"])
     new_recette["totaleTime"] = time
     # ratingValue
-    new_recette["note"] = recette["ratingValue"]["value"]
+    note = recette["ratingValue"]["value"]
+    note = roundNote(note)
+    new_recette["note"] = note
     # cuisine
     new_recette["cuisine"] = recette["cuisine"]["value"]
     # ingredients
@@ -250,9 +255,25 @@ def getListInfosIngredients(ingredientsList):
         infosIngredientsJson = {}
         # if it is the hyperlink we take just what is just before ".jpg"
         if "http" in ingredient:
+            # get the ingredient (after the last / and before .jpg
             new_ingredient = ingredient.rsplit('/', 1)[1]
             new_ingredient = new_ingredient.split('.jpg')[0]
+
+            # clean the string :
+            # remove the resized if it is in the string
+            new_ingredient = new_ingredient.replace('-resized', '')
+            # remove the %IGNORE if it is in the string
+            new_ingredient = new_ingredient.replace('%', '')
+            new_ingredient = new_ingredient.replace('IGNORE', '')
+            # remove the "NEW"" if it is in the string
+            new_ingredient = new_ingredient.replace('NEW', '')
+            new_ingredient = new_ingredient.replace('-', ' ')
+            new_ingredient = new_ingredient.replace('_', ' ')
+            # remove number from the string
+            remove_digits = str.maketrans('', '', digits)
+            new_ingredient = new_ingredient.translate(remove_digits)
             infosIngredientsJson["ingredient"] = new_ingredient
+
             # add the ingredient's url only if the ingredient is in the known ingredients'list
             for ing in known_ingredients:
                 if ing in new_ingredient:
@@ -275,6 +296,12 @@ def changeTimeFormat(time):
         time += "in"
     time = time.lower()
     return time
+
+
+def roundNote(note):
+    note = float(note)
+    note = round(note, 1)
+    return note
 
 
 if __name__ == '__main__':
