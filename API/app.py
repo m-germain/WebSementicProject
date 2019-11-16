@@ -5,7 +5,7 @@ from string import digits
 
 app = Flask(__name__)
 
-known_ingredients = ['tomato', 'onion', 'carot', 'lemon']
+known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'lime']
 
 @app.route('/')
 def hello_world():
@@ -23,6 +23,9 @@ def getRecetteList():
 
     # filter on multiple ingredients
     filter_ingredients = ""
+
+    # filter on multiple ingredients
+    filter_keywords = ""
 
     # filter on note
     # Add the filter only if the note is provided
@@ -70,8 +73,22 @@ def getRecetteList():
     if filter_ingredients != "":
         filter_ingredients += ")."
 
-    query = """
-        SELECT 
+    # filter on keyword
+    # Add the filter only if the keyword is provided
+    keywordsList = parameters.get('keywords')
+    if (keywordsList is not None) and (keywordsList != ''):
+        keywords = keywordsList.split(' ')
+        for keyword in keywords:
+            if filter_keywords == "":
+                filter_keywords = "FILTER( CONTAINS(str(?keywords), '" + keyword + "' ) "
+            else:
+                filter_keywords += "|| CONTAINS(str(?keywords), '" + keyword + "' ) "
+
+    # Close the parenthesis at the end of the clause
+    if filter_keywords != "":
+        filter_keywords += ")."
+
+    query = """SELECT DISTINCT
             ?name 
             ?desc 
             ?img
@@ -87,7 +104,8 @@ def getRecetteList():
                 ?totalTime
                 ?ratingValue
                 ?source
-                (group_concat(?ingredients;separator = ";") as ?ingredients)
+                (group_concat(DISTINCT ?ingredients;separator = ";") as ?ingredients)
+                (group_concat(DISTINCT ?keywords;separator = ";") as ?keywords)
             WHERE {
                 SELECT DISTINCT
                     ?desc 
@@ -97,6 +115,7 @@ def getRecetteList():
                     ?totalTime
                     ?ratingValue
                     ?source
+                    ?keywords
                 WHERE
                 {
                     ?recipe a schema:Recipe;
@@ -105,6 +124,7 @@ def getRecetteList():
                     schema:image ?img;
                     schema:recipeCuisine ?cuisine;
                     schema:ingredients ?ingredients;
+                    schema:keywords ?keywords;               
                     schema:ratingValue ?ratingValue;
                     schema:totalTime ?totalTime;
                     wdrs:describedby ?source.
@@ -113,8 +133,9 @@ def getRecetteList():
             }
             GROUP BY ?desc ?name ?img ?totalTime ?ratingValue ?source
             }
-        """ + filter_ingredients + """ 
+        """ + filter_ingredients + """  """ + filter_keywords + """
         } """
+
     # get the result of the query in json
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
     sparql.setQuery(query)
@@ -245,6 +266,7 @@ def mappingSummaryRecette(raw_data):
     ingredientsList = recette["ingredients"]["value"]
     new_recette["ingredients"] = getListInfosIngredients(ingredientsList)
     return new_recette
+
 
 # create a Json List with the ingredients ( and the url if the ingredient is in our glossaire)
 # result : [ { "ingredient": ..., "url": ...},{...}, ... ]
