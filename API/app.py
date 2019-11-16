@@ -5,7 +5,7 @@ from string import digits
 
 app = Flask(__name__)
 
-known_ingredients = ['tomato', 'onion', 'carot']
+known_ingredients = ['tomato', 'onion', 'carot', 'lemon']
 
 @app.route('/')
 def hello_world():
@@ -206,7 +206,7 @@ def mappingSmallSummary(raw_data):
         new_recette["imgUrl"] = recette["img"]["value"]
         # total time
         time = changeTimeFormat(recette["totalTime"]["value"])
-        new_recette["totaleTime"] = time
+        new_recette["totalTime"] = time
         # ratingValue
         note = recette["ratingValue"]["value"]
         note = roundNote(note)
@@ -234,7 +234,7 @@ def mappingSummaryRecette(raw_data):
     new_recette["imgUrl"] = recette["img"]["value"]
     # total time
     time = changeTimeFormat(recette["totalTime"]["value"])
-    new_recette["totaleTime"] = time
+    new_recette["totalTime"] = time
     # ratingValue
     note = recette["ratingValue"]["value"]
     note = roundNote(note)
