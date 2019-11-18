@@ -5,7 +5,7 @@ from string import digits
 
 app = Flask(__name__)
 
-known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'lime']
+known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'celery', 'pea']
 
 
 @app.route('/')
@@ -80,6 +80,7 @@ def getRecetteList():
     if (keywordsList is not None) and (keywordsList != ''):
         keywords = keywordsList.split(' ')
         for keyword in keywords:
+            keyword = keyword.lower()
             if filter_keywords == "":
                 filter_keywords = "FILTER( CONTAINS(LCASE(str(?keywords)), '" + keyword + "' ) "
             else:
@@ -365,7 +366,10 @@ def roundNote(note):
 
 @app.route('/infosingredients')
 def getInfosingredients():
-    ingredient = "Onion"
+    parameters = request.args
+    ingredient = parameters.get('ingredient')
+    ingredient = str.capitalize(ingredient)
+
     query = """
          SELECT DISTINCT ?desc ?img
         WHERE {
