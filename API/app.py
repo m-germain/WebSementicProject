@@ -7,6 +7,7 @@ app = Flask(__name__)
 
 known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'lime']
 
+
 @app.route('/')
 def hello_world():
     return 'Hello World!'
@@ -155,39 +156,65 @@ def getRecetteList():
 @app.route('/recette')
 def getRecette():
     parameters = request.args
-    name = parameters.get('name') #Ex : spanish-sardines-on-toast
-    query =""" SELECT 
-                ?desc 
-                ?name 
-                ?img
-                ?cuisine
-                ?totalTime
-                ?ratingValue
-                (group_concat(?ingredients;separator = ";") as ?ingredients)
-            WHERE {
-                SELECT DISTINCT
+    name = parameters.get('name')
+    # Ex : spanish-sardines-on-toast
+    query = """ SELECT 
                     ?desc 
                     ?name 
                     ?img
                     ?cuisine
-                    ?ingredients
                     ?totalTime
                     ?ratingValue
-                WHERE
-                {
-                    ?recipe a schema:Recipe;
-                    schema:description ?desc;
-                    schema:name ?name;
-                    schema:image ?img;
-                    schema:recipeCuisine ?cuisine;
-                    schema:ingredients ?ingredients;
-                    schema:ratingValue ?ratingValue;
-                    schema:totalTime ?totalTime;
-                    wdrs:describedby ?source.
-                    FILTER(CONTAINS(str(?source), "%s" )).
+                    ?calories
+                    ?carbohydrate
+                    ?fat
+                    ?fiber
+                    ?protein
+                    ?saturatedFat
+                    ?sodium
+                    ?sugar
+                    (group_concat(?ingredients;separator = ";") as ?ingredients)
+                WHERE {
+                    SELECT DISTINCT
+                        ?desc 
+                        ?name 
+                        ?img
+                        ?cuisine
+                        ?ingredients
+                        ?totalTime
+                        ?ratingValue
+                        ?carbohydrate
+                        ?fat
+                        ?fiber
+                        ?protein
+                        ?saturatedFat
+                        ?sodium
+                        ?sugar
+                    WHERE
+                    {
+                        ?recipe a schema:Recipe;
+                        schema:description ?desc;
+                        schema:name ?name;
+                        schema:image ?img;
+                        schema:recipeCuisine ?cuisine;
+                        schema:ingredients ?ingredients;
+                        schema:ratingValue ?ratingValue;
+                        schema:totalTime ?totalTime;
+                        wdrs:describedby ?source;
+                        schema:nutrition ?nutrition.
+                        OPTIONAL { ?nutrition schema:calories ?calories. }
+                        OPTIONAL { ?nutrition schema:carbohydrateContent ?carbohydrate. }
+                        OPTIONAL { ?nutrition schema:fatContent ?fat. }
+                        OPTIONAL { ?nutrition schema:fiberContent ?fiber. }
+                        OPTIONAL { ?nutrition schema:proteinContent ?protein. }
+                        OPTIONAL { ?nutrition schema:saturatedFatContent ?saturatedFat. }
+                        OPTIONAL { ?nutrition schema:sodiumContent ?sodium. }
+                        OPTIONAL { ?nutrition schema:sugarContent ?sugar. }
+                        FILTER(CONTAINS(str(?source), "%s" )).
+                    }
                 }
-            }
-            GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue """ % (name)
+                GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue 
+                    ?calories ?carbohydrate ?fat ?fiber ?protein ?saturatedFat ?sodium ?sugar """ % (name)
     # get the result of the query in json
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
     sparql.setQuery(query)
@@ -262,6 +289,15 @@ def mappingSummaryRecette(raw_data):
     new_recette["note"] = note
     # cuisine
     new_recette["cuisine"] = recette["cuisine"]["value"]
+    # nutrition
+    new_recette["calories"] = recette["calories"]["value"]
+    new_recette["carbohydrate"] = recette["carbohydrate"]["value"]
+    new_recette["fat"] = recette["fat"]["value"]
+    new_recette["fiber"] = recette["fiber"]["value"]
+    new_recette["protein"] = recette["protein"]["value"]
+    new_recette["saturatedFat"] = recette["saturatedFat"]["value"]
+    new_recette["sodium"] = recette["sodium"]["value"]
+    new_recette["sugar"] = recette["sugar"]["value"]
     # ingredients
     ingredientsList = recette["ingredients"]["value"]
     new_recette["ingredients"] = getListInfosIngredients(ingredientsList)
