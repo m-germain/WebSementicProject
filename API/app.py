@@ -183,6 +183,7 @@ def getRecette():
                         ?ingredients
                         ?totalTime
                         ?ratingValue
+                        ?calories
                         ?carbohydrate
                         ?fat
                         ?fiber
