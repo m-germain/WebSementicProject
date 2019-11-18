@@ -363,5 +363,41 @@ def roundNote(note):
     return note
 
 
+@app.route('/infosingredients')
+def getInfosingredients():
+    ingredient = "Onion"
+    query = """
+         SELECT DISTINCT ?desc ?img
+        WHERE {
+            <http://dbpedia.org/resource/""" + ingredient + """> rdfs:comment ?desc;
+            foaf:depiction ?img.
+            FILTER langMatches(lang(?desc), 'en').
+        }"""
+    # get the result of the query in json
+    sparql = SPARQLWrapper("https://dbpedia.org/sparql")
+    sparql.setQuery(query)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+
+    # get infos ingredient
+    results = mappingSummaryIngredients(results)
+
+    resp = make_response(results)
+    # Permet de comuniquer sur des ports différents sur le navigateur
+    # regle les problemes de CORS policy
+    resp.headers.set('Access-Control-Allow-Origin', '*')
+    return resp
+
+
+def mappingSummaryIngredients(raw_data):
+    infosIngredient_all = raw_data["results"]["bindings"][0]
+    infosIngredient = {}
+    # desc
+    infosIngredient['desc'] = infosIngredient_all['desc']['value']
+    # img
+    infosIngredient['img'] = infosIngredient_all['img']['value']
+    return infosIngredient
+
+
 if __name__ == '__main__':
     app.run()
