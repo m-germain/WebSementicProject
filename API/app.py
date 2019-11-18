@@ -5,7 +5,7 @@ from string import digits
 
 app = Flask(__name__)
 
-known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'celery', 'pea']
+known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'celery', 'pea', 'banana', 'mango', 'olive', 'saffron', 'coriander', 'parsley']
 
 
 @app.route('/')
