@@ -159,7 +159,7 @@ def getRecette():
     parameters = request.args
     name = parameters.get('name')
     # Ex : spanish-sardines-on-toast
-    query = """ SELECT 
+    query = """ SELECT
                     ?desc 
                     ?name 
                     ?img
@@ -174,14 +174,14 @@ def getRecette():
                     ?saturatedFat
                     ?sodium
                     ?sugar
-                    (group_concat(?ingredients;separator = ";") as ?ingredients)
-                WHERE {
-                    SELECT DISTINCT
+                    ?ingredients
+                    (group_concat(?recipeInstructions;separator = ";") as ?recipeInstructions)
+                WHERE { 
+                    SELECT 
                         ?desc 
                         ?name 
                         ?img
                         ?cuisine
-                        ?ingredients
                         ?totalTime
                         ?ratingValue
                         ?calories
@@ -192,30 +192,54 @@ def getRecette():
                         ?saturatedFat
                         ?sodium
                         ?sugar
-                    WHERE
-                    {
-                        ?recipe a schema:Recipe;
-                        schema:description ?desc;
-                        schema:name ?name;
-                        schema:image ?img;
-                        schema:recipeCuisine ?cuisine;
-                        schema:ingredients ?ingredients;
-                        schema:ratingValue ?ratingValue;
-                        schema:totalTime ?totalTime;
-                        wdrs:describedby ?source;
-                        schema:nutrition ?nutrition.
-                        OPTIONAL { ?nutrition schema:calories ?calories. }
-                        OPTIONAL { ?nutrition schema:carbohydrateContent ?carbohydrate. }
-                        OPTIONAL { ?nutrition schema:fatContent ?fat. }
-                        OPTIONAL { ?nutrition schema:fiberContent ?fiber. }
-                        OPTIONAL { ?nutrition schema:proteinContent ?protein. }
-                        OPTIONAL { ?nutrition schema:saturatedFatContent ?saturatedFat. }
-                        OPTIONAL { ?nutrition schema:sodiumContent ?sodium. }
-                        OPTIONAL { ?nutrition schema:sugarContent ?sugar. }
-                        FILTER(CONTAINS(str(?source), "%s" )).
+                        ?recipeInstructions
+                        (group_concat(?ingredients;separator = ";") as ?ingredients)
+                    WHERE {
+                        SELECT DISTINCT
+                            ?desc 
+                            ?name 
+                            ?img
+                            ?cuisine
+                            ?ingredients
+                            ?totalTime
+                            ?ratingValue
+                            ?calories
+                            ?carbohydrate
+                            ?fat
+                            ?fiber
+                            ?protein
+                            ?saturatedFat
+                            ?sodium
+                            ?sugar
+                            ?recipeInstructions
+                        WHERE
+                        {
+                            ?recipe a schema:Recipe;
+                            schema:description ?desc;
+                            schema:name ?name;
+                            schema:image ?img;
+                            schema:recipeCuisine ?cuisine;
+                            schema:ingredients ?ingredients;
+                            schema:recipeInstructions ?recipeInstructions;
+                            schema:ratingValue ?ratingValue;
+                            schema:totalTime ?totalTime;
+                            wdrs:describedby ?source;
+                            schema:nutrition ?nutrition.
+                            OPTIONAL { ?nutrition schema:calories ?calories. }
+                            OPTIONAL { ?nutrition schema:carbohydrateContent ?carbohydrate. }
+                            OPTIONAL { ?nutrition schema:fatContent ?fat. }
+                            OPTIONAL { ?nutrition schema:fiberContent ?fiber. }
+                            OPTIONAL { ?nutrition schema:proteinContent ?protein. }
+                            OPTIONAL { ?nutrition schema:saturatedFatContent ?saturatedFat. }
+                            OPTIONAL { ?nutrition schema:sodiumContent ?sodium. }
+                            OPTIONAL { ?nutrition schema:sugarContent ?sugar. }
+                            FILTER(CONTAINS(str(?source), "%s" )).
+                        }
                     }
+                    GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?recipeInstructions ?ratingValue 
+                        ?calories ?carbohydrate ?fat ?fiber ?protein ?saturatedFat ?sodium ?sugar 
                 }
-                GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue 
+                GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ingredients ?ratingValue 
                     ?calories ?carbohydrate ?fat ?fiber ?protein ?saturatedFat ?sodium ?sugar """ % (name)
     # get the result of the query in json
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
