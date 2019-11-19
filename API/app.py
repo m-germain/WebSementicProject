@@ -53,7 +53,7 @@ def getRecetteList():
         if filter_clause == "":
             filter_clause = "FILTER( CONTAINS(str(?cuisine),'" + typeCuisine + "' ) "
         else:
-            filter_clause += "&& CONTAINS(str(?cuisine), '" + typeCuisine + "' ) "
+            filter_clause += "&& CONTAINS(str(?cuisine), '" + typeCuisine.lower() + "' ) "
 
     # Close the parenthesis at the end of the clause
     if filter_clause != "":
@@ -68,7 +68,7 @@ def getRecetteList():
             if filter_ingredients == "":
                 filter_ingredients = "FILTER( CONTAINS(str(?ingredients), '" + ingredient + "' ) "
             else:
-                filter_ingredients += "&& CONTAINS(str(?ingredients), '" + ingredient + "' ) "
+                filter_ingredients += "&& CONTAINS(str(?ingredients), '" + ingredient.lower() + "' ) "
 
     # Close the parenthesis at the end of the clause
     if filter_ingredients != "":
@@ -84,7 +84,7 @@ def getRecetteList():
             if filter_keywords == "":
                 filter_keywords = "FILTER( CONTAINS(LCASE(str(?keywords)), '" + keyword + "' ) "
             else:
-                filter_keywords += "|| CONTAINS(LCASE(str(?keywords)), '" + keyword + "' ) "
+                filter_keywords += "|| CONTAINS(LCASE(str(?keywords)), '" + keyword.lower() + "' ) "
 
     # Close the parenthesis at the end of the clause
     if filter_keywords != "":
