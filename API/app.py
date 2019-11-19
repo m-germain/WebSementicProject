@@ -18,7 +18,7 @@ def hello_world():
 @app.route('/listRecette')
 def getRecetteList():
     parameters = request.args
-
+    print(parameters)
     # filter of the SPARQL query
     filter_clause = ""
 
@@ -31,7 +31,7 @@ def getRecetteList():
     # filter on note
     # Add the filter only if the note is provided
     note = parameters.get('note')
-    if note is not None:
+    if note is not None and (note != ""):
         if filter_clause == "":
             filter_clause = "FILTER( xsd:float(?ratingValue)>" + note + " "
         else:
@@ -40,7 +40,7 @@ def getRecetteList():
     # filter on tempDePrep
     # Add the filter only if the tempDePrep is provided
     tempDePrep = parameters.get('tempDePrep')
-    if tempDePrep is not None:
+    if tempDePrep is not None and (tempDePrep != ""):
         if filter_clause == "":
             filter_clause = 'FILTER( "' + tempDePrep + '"^^xsd:duration > xsd:duration(?totalTime) '
         else:
@@ -49,11 +49,11 @@ def getRecetteList():
     # filter on typeCuisine
     # Add the filter only if the typeCuisine is provided
     typeCuisine = parameters.get('typeCuisine')
-    if typeCuisine is not None:
+    if typeCuisine is not None and (typeCuisine != ''):
         if filter_clause == "":
             filter_clause = "FILTER( CONTAINS(str(?cuisine),'" + typeCuisine + "' ) "
         else:
-            filter_clause += "&& CONTAINS(str(?cuisine), '" + typeCuisine.lower() + "' ) "
+            filter_clause += "&& CONTAINS(str(?cuisine), '" + typeCuisine + "' ) "
 
     # Close the parenthesis at the end of the clause
     if filter_clause != "":
@@ -62,7 +62,7 @@ def getRecetteList():
     # filter on ingredient
     # Add the filter only if the ingredient is provided
     ingredientsList = parameters.get('ingredients')
-    if ingredientsList is not None:
+    if ingredientsList is not None and (ingredientsList != ''):
         ingredients = ingredientsList.split(',')
         for ingredient in ingredients:
             if filter_ingredients == "":
@@ -77,6 +77,7 @@ def getRecetteList():
     # filter on keyword
     # Add the filter only if the keyword is provided
     keywordsList = parameters.get('keywords')
+    print(keywordsList)
     if (keywordsList is not None) and (keywordsList != ''):
         keywords = keywordsList.split(' ')
         for keyword in keywords:
@@ -138,6 +139,7 @@ def getRecetteList():
         """ + filter_ingredients + """  """ + filter_keywords + """
         } """
 
+    print(query)
     # get the result of the query in json
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
     sparql.setQuery(query)
@@ -148,6 +150,7 @@ def getRecetteList():
     results = mappingSmallSummary(results)
     resp = make_response(results)
     resp.headers.set('Access-Control-Allow-Origin', '*')
+    print(results)
     return resp
 
 
