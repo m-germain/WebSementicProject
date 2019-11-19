@@ -5,7 +5,7 @@ from string import digits
 
 app = Flask(__name__)
 
-known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'lime']
+known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'celery', 'pea', 'banana', 'mango', 'olive', 'saffron', 'coriander', 'parsley']
 
 
 @app.route('/')
@@ -80,6 +80,7 @@ def getRecetteList():
     if (keywordsList is not None) and (keywordsList != ''):
         keywords = keywordsList.split(' ')
         for keyword in keywords:
+            keyword = keyword.lower()
             if filter_keywords == "":
                 filter_keywords = "FILTER( CONTAINS(LCASE(str(?keywords)), '" + keyword + "' ) "
             else:
@@ -361,6 +362,45 @@ def roundNote(note):
     note = float(note)
     note = round(note, 1)
     return note
+
+
+@app.route('/infosingredients')
+def getInfosingredients():
+    parameters = request.args
+    ingredient = parameters.get('ingredient')
+    ingredient = str.capitalize(ingredient)
+
+    query = """
+         SELECT DISTINCT ?desc ?img
+        WHERE {
+            <http://dbpedia.org/resource/""" + ingredient + """> rdfs:comment ?desc;
+            foaf:depiction ?img.
+            FILTER langMatches(lang(?desc), 'en').
+        }"""
+    # get the result of the query in json
+    sparql = SPARQLWrapper("https://dbpedia.org/sparql")
+    sparql.setQuery(query)
+    sparql.setReturnFormat(JSON)
+    results = sparql.query().convert()
+
+    # get infos ingredient
+    results = mappingSummaryIngredients(results)
+
+    resp = make_response(results)
+    # Permet de comuniquer sur des ports différents sur le navigateur
+    # regle les problemes de CORS policy
+    resp.headers.set('Access-Control-Allow-Origin', '*')
+    return resp
+
+
+def mappingSummaryIngredients(raw_data):
+    infosIngredient_all = raw_data["results"]["bindings"][0]
+    infosIngredient = {}
+    # desc
+    infosIngredient['desc'] = infosIngredient_all['desc']['value']
+    # img
+    infosIngredient['img'] = infosIngredient_all['img']['value']
+    return infosIngredient
 
 
 if __name__ == '__main__':
