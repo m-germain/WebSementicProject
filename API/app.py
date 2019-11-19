@@ -5,7 +5,7 @@ from string import digits
 
 app = Flask(__name__)
 
-known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'celery', 'pea', 'banana', 'mango', 'olive', 'saffron', 'coriander', 'parsley']
+known_ingredients = ['tomato', 'onion', 'carrot', 'lemon', 'celery', 'banana', 'mango', 'olive', 'saffron', 'coriander', 'parsley']
 
 
 @app.route('/')
@@ -50,6 +50,7 @@ def getRecetteList():
     # Add the filter only if the typeCuisine is provided
     typeCuisine = parameters.get('typeCuisine')
     if typeCuisine is not None and (typeCuisine != ''):
+        typeCuisine = str.capitalize(typeCuisine)
         if filter_clause == "":
             filter_clause = "FILTER( CONTAINS(str(?cuisine),'" + typeCuisine + "' ) "
         else:
