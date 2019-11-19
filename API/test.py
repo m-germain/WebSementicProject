@@ -158,11 +158,12 @@ def getRecette():
     parameters = request.args
     name = parameters.get('name')
     # Ex : spanish-sardines-on-toast
-    query = """ SELECT 
+    query = """ SELECT DISTINCT
                     ?desc 
                     ?name 
                     ?img
                     ?cuisine
+                    ?ingredients
                     ?totalTime
                     ?ratingValue
                     ?calories
@@ -173,49 +174,28 @@ def getRecette():
                     ?saturatedFat
                     ?sodium
                     ?sugar
-                    (group_concat(?ingredients;separator = ";") as ?ingredients)
-                WHERE {
-                    SELECT DISTINCT
-                        ?desc 
-                        ?name 
-                        ?img
-                        ?cuisine
-                        ?ingredients
-                        ?totalTime
-                        ?ratingValue
-                        ?calories
-                        ?carbohydrate
-                        ?fat
-                        ?fiber
-                        ?protein
-                        ?saturatedFat
-                        ?sodium
-                        ?sugar
-                    WHERE
-                    {
-                        ?recipe a schema:Recipe;
-                        schema:description ?desc;
-                        schema:name ?name;
-                        schema:image ?img;
-                        schema:recipeCuisine ?cuisine;
-                        schema:ingredients ?ingredients;
-                        schema:ratingValue ?ratingValue;
-                        schema:totalTime ?totalTime;
-                        wdrs:describedby ?source;
-                        schema:nutrition ?nutrition.
-                        OPTIONAL { ?nutrition schema:calories ?calories. }
-                        OPTIONAL { ?nutrition schema:carbohydrateContent ?carbohydrate. }
-                        OPTIONAL { ?nutrition schema:fatContent ?fat. }
-                        OPTIONAL { ?nutrition schema:fiberContent ?fiber. }
-                        OPTIONAL { ?nutrition schema:proteinContent ?protein. }
-                        OPTIONAL { ?nutrition schema:saturatedFatContent ?saturatedFat. }
-                        OPTIONAL { ?nutrition schema:sodiumContent ?sodium. }
-                        OPTIONAL { ?nutrition schema:sugarContent ?sugar. }
-                        FILTER(CONTAINS(str(?source), "%s" )).
-                    }
-                }
-                GROUP BY ?recipe ?desc ?name ?img ?cuisine ?totalTime ?ratingValue 
-                    ?calories ?carbohydrate ?fat ?fiber ?protein ?saturatedFat ?sodium ?sugar """ % (name)
+                WHERE
+                {
+                    ?recipe a schema:Recipe;
+                    schema:description ?desc;
+                    schema:name ?name;
+                    schema:image ?img;
+                    schema:recipeCuisine ?cuisine;
+                    schema:ingredients ?ingredients;
+                    schema:ratingValue ?ratingValue;
+                    schema:totalTime ?totalTime;
+                    wdrs:describedby ?source;
+                    schema:nutrition ?nutrition.
+                    OPTIONAL { ?nutrition schema:calories ?calories. }
+                    OPTIONAL { ?nutrition schema:carbohydrateContent ?carbohydrate. }
+                    OPTIONAL { ?nutrition schema:fatContent ?fat. }
+                    OPTIONAL { ?nutrition schema:fiberContent ?fiber. }
+                    OPTIONAL { ?nutrition schema:proteinContent ?protein. }
+                    OPTIONAL { ?nutrition schema:saturatedFatContent ?saturatedFat. }
+                    OPTIONAL { ?nutrition schema:sodiumContent ?sodium. }
+                    OPTIONAL { ?nutrition schema:sugarContent ?sugar. }
+                    FILTER(CONTAINS(str(?source), "%s" )).
+                } """ % (name)
     # get the result of the query in json
     sparql = SPARQLWrapper("http://linkeddata.uriburner.com/sparql")
     sparql.setQuery(query)
@@ -300,16 +280,17 @@ def mappingSummaryRecette(raw_data):
     new_recette["sodium"] = recette["sodium"]["value"]
     new_recette["sugar"] = recette["sugar"]["value"]
     # ingredients
-    ingredientsList = recette["ingredients"]["value"]
-    new_recette["ingredients"] = getListInfosIngredients(ingredientsList)
+    ingredients = []
+    for item in raw_data["results"]["bindings"]:
+        ingredients.append(item["ingredients"]["value"])
+    new_recette["ingredients"] = getListInfosIngredients(ingredients)
     return new_recette
 
 
 # create a Json List with the ingredients ( and the url if the ingredient is in our glossaire)
 # result : [ { "ingredient": ..., "url": ...},{...}, ... ]
-def getListInfosIngredients(ingredientsList):
+def getListInfosIngredients(ingredients):
     list_ingredients = []
-    ingredients = ingredientsList.split(';')
     for ingredient in ingredients:
         infosIngredientsJson = {}
         # if it is the hyperlink we take just what is just before ".jpg"
