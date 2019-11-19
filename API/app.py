@@ -373,6 +373,17 @@ def getListInfosIngredients(ingredientsList):
         list_ingredients.append(infosIngredientsJson)
     return list_ingredients
 
+# create a Json List with the recepe instructions
+# result : [ "recipeInstructions": ...,..., ... ]
+def getListInfosRecipeInstructions(recipeInstructionsList):
+    list_recipeInstructions = []
+    recipeInstructions = recipeInstructionsList.split(';')
+    for recipeInstruction in recipeInstructions:
+        infosRecipeInstructionsJson = {}
+        # if it is the hyperlink we take just what is just before ".jpg"
+        infosRecipeInstructionsJson["recipeInstruction"] = recipeInstruction
+        list_recipeInstructions.append(infosRecipeInstructionsJson)
+    return list_recipeInstructions
 
 def changeTimeFormat(time):
     time = time.split('T')[1]
