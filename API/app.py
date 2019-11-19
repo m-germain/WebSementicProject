@@ -327,6 +327,9 @@ def mappingSummaryRecette(raw_data):
     # ingredients
     ingredientsList = recette["ingredients"]["value"]
     new_recette["ingredients"] = getListInfosIngredients(ingredientsList)
+    # recipeInstructions
+    recipeInstructionsList = recette["recipeInstructions"]["value"]
+    new_recette["recipeInstructions"] = getListInfosRecipeInstructions(recipeInstructionsList)
     return new_recette
 
 
