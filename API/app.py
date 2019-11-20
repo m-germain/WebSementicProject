@@ -41,6 +41,8 @@ def getRecetteList():
     # Add the filter only if the tempDePrep is provided
     tempDePrep = parameters.get('tempDePrep')
     if tempDePrep is not None and (tempDePrep != ""):
+        tempDePrep = changeTimeToPTformat(tempDePrep)
+        print(tempDePrep)
         if filter_clause == "":
             filter_clause = 'FILTER( "' + tempDePrep + '"^^xsd:duration > xsd:duration(?totalTime) '
         else:
@@ -359,6 +361,12 @@ def changeTimeFormat(time):
     if "M" in time:
         time += "in"
     time = time.lower()
+    return time
+
+# 1h30 to PT1H30M
+def changeTimeToPTformat(time):
+    time = time.upper()
+    time = "PT" + time + "M"
     return time
 
 
