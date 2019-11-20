@@ -131,9 +131,9 @@ def getRecetteList():
                     schema:recipeCuisine ?cuisine;
                     schema:ingredients ?ingredients;
                     schema:keywords ?keywords;               
-                    schema:ratingValue ?ratingValue;
                     schema:totalTime ?totalTime;
                     wdrs:describedby ?source.
+                    OPTIONAL{?recipe schema:ratingValue ?ratingValue.}
                     """ + filter_clause + """
                 }
             }
@@ -150,6 +150,7 @@ def getRecetteList():
     results = sparql.query().convert()
 
     # get summary for each recette
+    print(results)
     results = mappingSmallSummary(results)
     resp = make_response(results)
     resp.headers.set('Access-Control-Allow-Origin', '*')
@@ -206,7 +207,6 @@ def getRecette():
                         schema:image ?img;
                         schema:recipeCuisine ?cuisine;
                         schema:ingredients ?ingredients;
-                        schema:ratingValue ?ratingValue;
                         schema:totalTime ?totalTime;
                         wdrs:describedby ?source;
                         schema:nutrition ?nutrition.
@@ -218,6 +218,7 @@ def getRecette():
                         OPTIONAL { ?nutrition schema:saturatedFatContent ?saturatedFat. }
                         OPTIONAL { ?nutrition schema:sodiumContent ?sodium. }
                         OPTIONAL { ?nutrition schema:sugarContent ?sugar. }
+                        OPTIONAL { ?recipe schema:ratingValue ?ratingValue.}
                         FILTER(CONTAINS(str(?source), "%s" )).
                     }
                 }
@@ -244,30 +245,35 @@ def mappingSmallSummary(raw_data):
     result = {}
     new_list = []
     for recette in list_recette:
-        new_recette = {}
-        # name & linkName
-        name = recette["name"]["value"]
-        name = name.replace('\n', ' ')
-        new_recette["name"] = name
-        linkName = recette["source"]["value"].split("/")
-        new_recette["linkName"] = linkName[-1]
-        # description
-        desc = recette["desc"]["value"]
-        desc = desc.replace("\n\n\n\n", "")
-        desc = desc.replace("\n\n\n", "")
-        desc = desc.replace("\n\n", "")
-        desc = desc.replace("\n", " ")
-        new_recette["description"] = desc
-        # image
-        new_recette["imgUrl"] = recette["img"]["value"]
-        # total time
-        time = changeTimeFormat(recette["totalTime"]["value"])
-        new_recette["totalTime"] = time
-        # ratingValue
-        note = recette["ratingValue"]["value"]
-        note = roundNote(note)
-        new_recette["note"] = note
-        new_list.append(new_recette)
+        if "name" in recette and "desc" in recette:
+            new_recette = {}
+            # name & linkName
+            name = recette["name"]["value"]
+            name = name.replace('\n', ' ')
+            new_recette["name"] = name
+            linkName = recette["source"]["value"].split("/")
+            new_recette["linkName"] = linkName[-1]
+            # description
+            desc = recette["desc"]["value"]
+            desc = desc.replace("\n\n\n\n", "")
+            desc = desc.replace("\n\n\n", "")
+            desc = desc.replace("\n\n", "")
+            desc = desc.replace("\n", " ")
+            new_recette["description"] = desc
+            # image
+            new_recette["imgUrl"] = recette["img"]["value"]
+            # total time
+            time = changeTimeFormat(recette["totalTime"]["value"])
+            new_recette["totalTime"] = time
+            # ratingValue
+            if "ratingValue" in recette:
+                note = recette["ratingValue"]["value"]
+                note = roundNote(note)
+                new_recette["note"] = note
+            else:
+                new_recette["note"] = 0
+            new_list.append(new_recette)
+
     result["list_recette"] = new_list
     return result
 
@@ -276,36 +282,80 @@ def mappingSummaryRecette(raw_data):
     recette = raw_data["results"]["bindings"][0]
     new_recette = {}
     # name
-    name = recette["name"]["value"]
-    name = name.replace('\n', ' ')
-    new_recette["name"] = name
+    if 'name' in recette:
+        name = recette["name"]["value"]
+        name = name.replace('\n', ' ')
+        new_recette["name"] = name
+    else:
+        new_recette["name"] = "This recipe has no name"
     # description
-    desc = recette["desc"]["value"]
-    desc = desc.replace("\n\n\n\n", "")
-    desc = desc.replace("\n\n\n", "")
-    desc = desc.replace("\n\n", "")
-    desc = desc.replace("\n", " ")
-    new_recette["description"] = desc
+    if 'desc' in recette:
+        desc = recette["desc"]["value"]
+        desc = desc.replace("\n\n\n\n", "")
+        desc = desc.replace("\n\n\n", "")
+        desc = desc.replace("\n\n", "")
+        desc = desc.replace("\n", " ")
+        new_recette["description"] = desc
+    else:
+        new_recette["description"] = 'This recipe has no description'
     # image
     new_recette["imgUrl"] = recette["img"]["value"]
     # total time
     time = changeTimeFormat(recette["totalTime"]["value"])
     new_recette["totalTime"] = time
     # ratingValue
-    note = recette["ratingValue"]["value"]
-    note = roundNote(note)
-    new_recette["note"] = note
+    if 'ratingValue' in recette:
+        note = recette["ratingValue"]["value"]
+        note = roundNote(note)
+        new_recette["note"] = note
+    else:
+        new_recette["note"] = 0
     # cuisine
-    new_recette["cuisine"] = recette["cuisine"]["value"]
+    if 'cuisine' in recette:
+        new_recette["cuisine"] = recette["cuisine"]["value"]
+    else:
+        new_recette["cuisine"] = 'No Category'
     # nutrition
-    new_recette["calories"] = recette["calories"]["value"]
-    new_recette["carbohydrate"] = recette["carbohydrate"]["value"]
-    new_recette["fat"] = recette["fat"]["value"]
-    new_recette["fiber"] = recette["fiber"]["value"]
-    new_recette["protein"] = recette["protein"]["value"]
-    new_recette["saturatedFat"] = recette["saturatedFat"]["value"]
-    new_recette["sodium"] = recette["sodium"]["value"]
-    new_recette["sugar"] = recette["sugar"]["value"]
+    if 'calories' in recette:
+        new_recette["calories"] = recette["calories"]["value"]
+    else:
+        new_recette["calories"] = 0
+
+    if 'carbohydrate' in recette:
+        new_recette["carbohydrate"] = recette["carbohydrate"]["value"]
+    else:
+        new_recette["carbohydrate"] = 0
+
+    if 'fat' in recette:
+        new_recette["fat"] = recette["fat"]["value"]
+    else:
+        new_recette["fat"] = 0
+
+    if 'fiber' in recette:
+        new_recette["fiber"] = recette["fiber"]["value"]
+    else:
+        new_recette["fiber"] = 0
+
+    if 'protein' in recette:
+        new_recette["protein"] = recette["protein"]["value"]
+    else:
+        new_recette["protein"] = 0
+
+    if 'saturatedFat' in recette:
+        new_recette["saturatedFat"] = recette["saturatedFat"]["value"]
+    else:
+        new_recette["saturatedFat"] = 0
+
+    if 'sodium' in recette:
+        new_recette["sodium"] = recette["sodium"]["value"]
+    else:
+        new_recette["sodium"] = 0
+
+    if 'sugar' in recette:
+        new_recette["sugar"] = recette["sugar"]["value"]
+    else:
+        new_recette["sugar"] = 0
+
     # ingredients
     ingredientsList = recette["ingredients"]["value"]
     new_recette["ingredients"] = getListInfosIngredients(ingredientsList)

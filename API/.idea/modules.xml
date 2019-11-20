@@ -3,6 +3,7 @@
   <component name="ProjectModuleManager">
     <modules>
       <module fileurl="file://$PROJECT_DIR$/.idea/API.iml" filepath="$PROJECT_DIR$/.idea/API.iml" />
+      <module fileurl="file://$PROJECT_DIR$/../../WebSementicProjectWeb/.idea/WebSementicProjectWeb.iml" filepath="$PROJECT_DIR$/../../WebSementicProjectWeb/.idea/WebSementicProjectWeb.iml" />
     </modules>
   </component>
 </project>
